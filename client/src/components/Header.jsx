@@ -3,13 +3,35 @@ import { Link, useLocation } from 'react-router-dom';
 import { AiOutlineSearch } from "react-icons/ai";
 import { FaMoon, FaSun } from "react-icons/fa";
 import { useSelector, useDispatch } from 'react-redux';
-import {toogleTheme} from '../redux/theme/themeSlice';
+import { toogleTheme } from '../redux/theme/themeSlice';
+import {
+    signOutUserStart,
+    signOutUserFailure,
+    signOutUserSuccess
+} from '../redux/user/userSlice';
+
 
 export default function Header() {
     const path = useLocation().pathname;
     const dispatch = useDispatch();
     const { currentUser } = useSelector(state => state.user)
-    const {theme} = useSelector((state) => state.theme);
+    const { theme } = useSelector((state) => state.theme);
+    // console.log(currentUser);
+    const handleSignOut = async () => {
+        try {
+            dispatch(signOutUserStart())
+            const res = await fetch('/api/auth/signout');
+            const data = await res.json();
+            if (data.success === false) {
+                dispatch(signOutUserFailure(data.message));
+                return;
+            }
+            dispatch(signOutUserSuccess(data));
+        } catch (error) {
+            dispatch(signOutUserFailure(error.message));
+        }
+    }
+
     return (
         <Navbar className='border-b-2'>
             <Link to="/" className='self-center whitespace-nowrap text-sm 
@@ -30,12 +52,12 @@ export default function Header() {
                 <AiOutlineSearch />
             </Button>
             <div className='flex gap-2 md:order-2'>
-                <Button className='w-12 h-10 hidden sm:inline' color='gray' 
-                pill
-                onClick ={()=>dispatch(toogleTheme())}
-                 >
-                    {theme === 'light' ?  <FaMoon /> :<FaSun/>}
-                    
+                <Button className='w-12 h-10 hidden sm:inline' color='gray'
+                    pill
+                    onClick={() => dispatch(toogleTheme())}
+                >
+                    {theme === 'light' ? <FaMoon /> : <FaSun />}
+
                 </Button>
                 {currentUser ? (
                     <Dropdown
@@ -43,24 +65,25 @@ export default function Header() {
                         inline
                         label={
                             <Avatar
+                                img={currentUser.profilePicture}
                                 alt='user'
                                 rounded
                             />
                         }
                     >
-                      <DropdownHeader>
-                        <span className='block text-sm'>@{currentUser.username}</span>
-                        <span></span>
-                      </DropdownHeader>
-                      <Link to={'/dashboard?tab=profile'}>
-                        <DropdownItem>
-                            Profile
+                        <DropdownHeader>
+                            <span className='block text-sm'>@{currentUser.username}</span>
+                            <span></span>
+                        </DropdownHeader>
+                        <Link to={'/dashboard?tab=profile'}>
+                            <DropdownItem>
+                                Profile
+                            </DropdownItem>
+                        </Link>
+                        <DropdownDivider />
+                        <DropdownItem onClick={handleSignOut}>
+                            Sign out
                         </DropdownItem>
-                      </Link>
-                      <DropdownDivider/>
-                    <DropdownItem>
-                        Sign out
-                    </DropdownItem>
                     </Dropdown>
                 ) : (
                     <Link to='/sign-in'>

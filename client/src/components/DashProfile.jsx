@@ -1,9 +1,31 @@
 import { Button, TextInput } from 'flowbite-react';
-import React from 'react'
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+
+import {
+  signOutUserStart,
+  signOutUserFailure,
+  signOutUserSuccess
+} from '../redux/user/userSlice';
 
 const DashProfile = () => {
     const {currentUser} = useSelector(state=>state.user)
+    const dispatch = useDispatch();
+
+    const handleSignOut = async () => {
+      try {
+          dispatch(signOutUserStart())
+          const res = await fetch('/api/auth/signout');
+          const data = await res.json();
+          if (data.success === false) {
+              dispatch(signOutUserFailure(data.message));
+              return;
+          }
+          dispatch(signOutUserSuccess(data));
+      } catch (error) {
+          dispatch(signOutUserFailure(error.message));
+      }
+  }
+
   return (
     <div className='max-w-lg mx-auto p-3 w-full'>
         <h1 className='my-7 text-center font-semibold text-3xl'>Profile</h1>
@@ -20,7 +42,7 @@ const DashProfile = () => {
         </form>
         <div className='text-red-500 flex justify-between mt-3'>
             <span className='cursor-pointer'>Delete Account</span>
-            <span className='cursor-pointer'>Sign Out</span>
+            <span className='cursor-pointer' onClick={handleSignOut}>Sign Out</span>
         </div>
     </div>
   )
